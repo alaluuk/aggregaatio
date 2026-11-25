@@ -28,6 +28,7 @@ int main()
 
     //Tehtävässä ei suoriteta seuraavia, mutta ne tulisi olla
     //oikeassa sovelluksessa
+
     delete objC2;
     objC2=nullptr;
 
