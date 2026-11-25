@@ -26,10 +26,8 @@ int main()
     delete objC1;
     objC1=nullptr;
 
-    //Tehtävässä ei suoriteta seuraavia, mutta ne tulisi olla
-    //oikeassa sovelluksessa
-    // delete objC2;
-    // objC2=nullptr;
+    delete objC2;
+    objC2=nullptr;
 
     return 0;
 }

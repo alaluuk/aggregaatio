@@ -1,0 +1,114 @@
+name: Memory Check and Release
+
+on:
+  push:
+    branches:
+      - release
+
+permissions:
+  contents: write
+
+jobs:
+  memory-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ cmake valgrind
+
+      - name: Build with AddressSanitizer
+        run: |
+          mkdir build-asan
+          cd build-asan
+          cmake -DCMAKE_CXX_FLAGS="-g -O1 -fsanitize=address,leak -fno-omit-frame-pointer" ..
+          make -j
+
+      - name: Run AddressSanitizer
+        run: |
+          cd build-asan
+          ASAN_OPTIONS=detect_leaks=1 ./aggregaatio
+
+      - name: Build for Valgrind
+        run: |
+          mkdir build-valgrind
+          cd build-valgrind
+          cmake -DCMAKE_CXX_FLAGS="-g -O1" ..
+          make -j
+
+      - name: Run Valgrind
+        run: |
+          cd build-valgrind
+          valgrind \
+            --leak-check=full \
+            --show-leak-kinds=all \
+            --track-origins=yes \
+            --error-exitcode=1 \
+            ./aggregaatio
+
+  build-linux:
+    needs: memory-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ cmake
+
+      - name: Build release
+        run: |
+          mkdir build-release
+          cd build-release
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make -j
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: myapplication-linux
+          path: build-release/aggregaatio
+
+  build-windows:
+    needs: memory-check
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install MinGW
+        run: choco install mingw -y
+
+      - name: Build release
+        run: |
+          mkdir build-release
+          cd build-release
+          cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build .
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: myapplication-windows
+          path: build-release/aggregaatio.exe
+
+  create-release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Release ${{ github.run_number }}
+          files: |
+            myapplication-linux/aggregaatio
+            myapplication-windows/aggregaatio.exe
