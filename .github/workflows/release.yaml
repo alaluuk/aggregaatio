@@ -47,7 +47,7 @@ jobs:
             --show-leak-kinds=all \
             --track-origins=yes \
             --error-exitcode=1 \
-            ./myapplication
+            ./aggregaatio
 
   build-linux:
     needs: memory-check
@@ -71,8 +71,8 @@ jobs:
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v5
         with:
-          name: myapplication-linux
-          path: build-release/myapplication
+          name: aggregaatio-linux
+          path: build-release/aggregaatio
 
   build-windows:
     needs: memory-check
@@ -94,8 +94,8 @@ jobs:
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v5
         with:
-          name: myapplication-windows
-          path: build-release/myapplication.exe
+          name: aggregaatio-windows
+          path: build-release/aggregaatio.exe
 
   create-release:
     needs: [build-linux, build-windows]
@@ -110,5 +110,5 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: Release ${{ github.run_number }}
           files: |
-            myapplication-linux/myapplication
-            myapplication-windows/myapplication.exe
+            aggregaatio-linux/aggregaatio
+            aggregaatio-windows/aggregaatio.exe
